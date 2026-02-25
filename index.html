@@ -1,123 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Live Chat via Link</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Telegram Style Chat</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f3f3f3;
-      max-width: 600px;
-      margin: 40px auto;
-      padding: 10px;
-    }
-    h2 {
-      text-align: center;
-    }
-    #chat {
-      background: #fff;
-      border: 1px solid #ccc;
-      height: 350px;
-      padding: 10px;
-      overflow-y: auto;
-      margin-bottom: 10px;
-    }
-    .msg {
-      padding: 8px;
-      background: #e0eaff;
-      margin-bottom: 6px;
-      border-radius: 4px;
-      font-size: 14px;
-      word-break: break-word;
-    }
-    #controls {
-      display: flex;
-      gap: 6px;
-    }
-    input {
-      flex: 1;
-      padding: 10px;
-      font-size: 14px;
-    }
-    button {
-      padding: 10px 16px;
-      cursor: pointer;
-    }
-  </style>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #e5ddd5;
+    display: flex;
+    justify-content: center;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 500px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #efeae2;
+  }
+
+  .header {
+    background: #0088cc;
+    color: white;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  #chat {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .message {
+    max-width: 75%;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    font-size: 14px;
+    word-wrap: break-word;
+  }
+
+  .me {
+    align-self: flex-end;
+    background: #dcf8c6;
+  }
+
+  .other {
+    align-self: flex-start;
+    background: white;
+  }
+
+  .username {
+    font-size: 11px;
+    color: #555;
+    margin-bottom: 3px;
+  }
+
+  .time {
+    font-size: 10px;
+    text-align: right;
+    margin-top: 4px;
+    color: gray;
+  }
+
+  .input-area {
+    display: flex;
+    padding: 10px;
+    background: #f0f0f0;
+  }
+
+  .input-area input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    outline: none;
+  }
+
+  .input-area button {
+    margin-left: 8px;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 20px;
+    background: #0088cc;
+    color: white;
+    cursor: pointer;
+  }
+
+</style>
 </head>
 <body>
 
-<h2>Live Chat check</h2>
+<div class="app">
+  <div class="header">Live Chat</div>
 
-<div id="chat"></div>
+  <div id="chat"></div>
 
-<div id="controls">
-  <input id="message" placeholder="Type a message..." />
-  <button id="sendBtn">Send</button>
+  <div class="input-area">
+    <input id="message" placeholder="Type a message..." />
+    <button id="sendBtn">Send</button>
+  </div>
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
 
-  // Your Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyAXgubYgcfYsaeDcx8DuEFmYWJkJ6oz8so",
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
   authDomain: "direct-chat-via-link.firebaseapp.com",
-
-  // 🔥 THIS LINE WAS MISSING
   databaseURL: "https://direct-chat-via-link-default-rtdb.asia-southeast1.firebasedatabase.app",
-
   projectId: "direct-chat-via-link",
   storageBucket: "direct-chat-via-link.firebasestorage.app",
   messagingSenderId: "26226616717",
   appId: "1:26226616717:web:89d75ac8e16d05245375c4"
-  };
+};
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-  // Use a "room" from the link: ?room=abc123
-  const params = new URLSearchParams(window.location.search);
-  const room = params.get("room") || "default-room";
-  const chatRef = ref(db, "rooms/" + room);
+// Ask username once
+let username = localStorage.getItem("chatUsername");
+if (!username) {
+  username = prompt("Enter your name:");
+  localStorage.setItem("chatUsername", username);
+}
 
-  // Send message
-  const sendBtn = document.getElementById("sendBtn");
-  const messageInput = document.getElementById("message");
+// Room from link
+const params = new URLSearchParams(window.location.search);
+const room = params.get("room") || "default-room";
+const chatRef = ref(db, "rooms/" + room);
 
-  function sendMessage() {
-    const text = messageInput.value.trim();
-    if (!text) return;
+// Send message
+const sendBtn = document.getElementById("sendBtn");
+const messageInput = document.getElementById("message");
 
-    push(chatRef, {
-      text,
-      time: Date.now()
-    });
+function sendMessage() {
+  const text = messageInput.value.trim();
+  if (!text) return;
 
-    messageInput.value = "";
+  push(chatRef, {
+    text,
+    username,
+    time: Date.now()
+  });
+
+  messageInput.value = "";
+}
+
+sendBtn.addEventListener("click", sendMessage);
+messageInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
+
+// Listen for new messages
+onChildAdded(chatRef, (snapshot) => {
+  const msg = snapshot.val();
+
+  const div = document.createElement("div");
+  div.classList.add("message");
+
+  if (msg.username === username) {
+    div.classList.add("me");
+  } else {
+    div.classList.add("other");
   }
 
-  sendBtn.addEventListener("click", sendMessage);
-  messageInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") sendMessage();
-  });
+  div.innerHTML = `
+    <div class="username">${msg.username}</div>
+    <div>${msg.text}</div>
+    <div class="time">${new Date(msg.time).toLocaleTimeString()}</div>
+  `;
 
-  // Listen for new messages
-  onChildAdded(chatRef, (snapshot) => {
-    const msg = snapshot.val();
-    const div = document.createElement("div");
-    div.className = "msg";
-    div.textContent = msg.text;
-    document.getElementById("chat").appendChild(div);
-
-    // Auto scroll to bottom
-    document.getElementById("chat").scrollTop =
-      document.getElementById("chat").scrollHeight;
-  });
-
+  document.getElementById("chat").appendChild(div);
+  document.getElementById("chat").scrollTop =
+    document.getElementById("chat").scrollHeight;
+});
 </script>
 
 </body>
