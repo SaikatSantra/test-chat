@@ -64,12 +64,15 @@
   // Your Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyAXgubYgcfYsaeDcx8DuEFmYWJkJ6oz8so",
-    authDomain: "direct-chat-via-link.firebaseapp.com",
-    projectId: "direct-chat-via-link",
-    storageBucket: "direct-chat-via-link.firebasestorage.app",
-    messagingSenderId: "26226616717",
-    appId: "1:26226616717:web:89d75ac8e16d05245375c4",
-    measurementId: "G-HZ6RQ23289"
+  authDomain: "direct-chat-via-link.firebaseapp.com",
+
+  // 🔥 THIS LINE WAS MISSING
+  databaseURL: "https://direct-chat-via-link-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+  projectId: "direct-chat-via-link",
+  storageBucket: "direct-chat-via-link.firebasestorage.app",
+  messagingSenderId: "26226616717",
+  appId: "1:26226616717:web:89d75ac8e16d05245375c4"
   };
 
   // Initialize Firebase
