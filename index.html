@@ -1,44 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Direct Chat via Link</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      background: #f9f9f9;
+    }
+    h2 {
+      text-align: center;
+    }
+    #chat {
+      border: 1px solid #ccc;
+      background: #fff;
+      height: 350px;
+      overflow-y: auto;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .msg {
+      margin-bottom: 8px;
+      padding: 6px 8px;
+      background: #eef;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    #controls {
+      display: flex;
+      gap: 6px;
+    }
+    input {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
+    }
+    button {
+      padding: 10px 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Live Chat</h2>
+
+<div id="chat"></div>
+
+<div id="controls">
+  <input id="message" placeholder="Type message..." />
+  <button id="sendBtn">Send</button>
+</div>
+
+<!-- 🔥 FIREBASE CHAT SCRIPT -->
 <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
+  // 🔐 Firebase configuration (YOUR PROJECT)
+  const firebaseConfig = {
+    apiKey: "AIzaSyAXgubYgcfYsaeDcx8DuEFmYWJkJ6oz8so",
+    authDomain: "direct-chat-via-link.firebaseapp.com",
+    databaseURL: "https://direct-chat-via-link-default-rtdb.firebaseio.com",
+    projectId: "direct-chat-via-link",
+    storageBucket: "direct-chat-via-link.firebasestorage.app",
+    messagingSenderId: "26226616717",
+    appId: "1:26226616717:web:89d75ac8e16d05245375c4"
+  };
 
-// 🔥 Your Firebase Config
-const firebaseConfig = {
-  apiKey: "AIzaSyAXgubYgcfYsaeDcx8DuEFmYWJkJ6oz8so",
-  authDomain: "direct-chat-via-link.firebaseapp.com",
-  databaseURL: "https://direct-chat-via-link-default-rtdb.firebaseio.com",
-  projectId: "direct-chat-via-link",
-  storageBucket: "direct-chat-via-link.firebasestorage.app",
-  messagingSenderId: "26226616717",
-  appId: "1:26226616717:web:89d75ac8e16d05245375c4"
-};
+  // ✅ Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-// ✅ Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const chatRef = ref(db, "messages");
+  // ✅ One shared chat room
+  const chatRef = ref(db, "messages");
 
-// ✅ Send Message
-document.getElementById("sendBtn").addEventListener("click", () => {
-  const input = document.getElementById("message");
-  const text = input.value.trim();
-  if (!text) return;
-
-  push(chatRef, {
-    text: text,
-    time: Date.now()
+  // ✅ Send message
+  document.getElementById("sendBtn").addEventListener("click", sendMessage);
+  document.getElementById("message").addEventListener("keypress", (e) => {
+    if (e.key === "Enter") sendMessage();
   });
 
-  input.value = "";
-});
+  function sendMessage() {
+    const input = document.getElementById("message");
+    const text = input.value.trim();
+    if (!text) return;
 
-// ✅ Receive Messages
-onChildAdded(chatRef, (snapshot) => {
-  const msg = snapshot.val();
-  const div = document.createElement("div");
-  div.textContent = msg.text;
-  document.getElementById("chat").appendChild(div);
-});
+    push(chatRef, {
+      text: text,
+      time: Date.now()
+    });
 
+    input.value = "";
+  }
+
+  // ✅ Receive messages in real time
+  onChildAdded(chatRef, (snapshot) => {
+    const msg = snapshot.val();
+    const div = document.createElement("div");
+    div.className = "msg";
+    div.textContent = msg.text;
+    document.getElementById("chat").appendChild(div);
+
+    // auto-scroll
+    document.getElementById("chat").scrollTop =
+      document.getElementById("chat").scrollHeight;
+  });
 </script>
+
+</body>
+</html>
