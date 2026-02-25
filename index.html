@@ -1,27 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Modern Live Chat</title>
+<title>Frosted Glass Live Chat</title>
 
 <style>
 :root{
---bg:#0f172a;
---panel:#111827;
---me:#2563eb;
---other:#1f2937;
---text:#e5e7eb;
---muted:#9ca3af;
+--glass: rgba(255,255,255,0.12);
+--border: rgba(255,255,255,0.25);
+--blur: blur(18px);
+--me: linear-gradient(135deg,#60a5fa,#2563eb);
+--other: rgba(255,255,255,0.18);
+--text:#fff;
 }
+
+*{box-sizing:border-box}
 
 body{
 margin:0;
-background:var(--bg);
-font-family:system-ui;
-color:var(--text);
+height:100vh;
+background:
+radial-gradient(circle at top,#1e3a8a,#020617 70%);
+font-family:system-ui,-apple-system;
 display:flex;
 justify-content:center;
+align-items:center;
+color:var(--text);
 }
 
 .app{
@@ -30,38 +35,51 @@ max-width:420px;
 height:100vh;
 display:flex;
 flex-direction:column;
-background:var(--panel);
+background:var(--glass);
+backdrop-filter:var(--blur);
+border:1px solid var(--border);
+box-shadow:
+0 30px 60px rgba(0,0,0,.6),
+inset 0 1px 1px rgba(255,255,255,.2);
 }
 
+/* HEADER */
 .header{
-padding:12px;
-background:#020617;
+padding:14px;
 display:flex;
 justify-content:space-between;
 align-items:center;
+background:rgba(255,255,255,.08);
+border-bottom:1px solid var(--border);
+}
+
+.header span{
 font-weight:600;
 }
 
-#onlineCount{
+#online{
 font-size:12px;
 color:#22c55e;
 }
 
+/* CHAT */
 #chat{
 flex:1;
 overflow-y:auto;
-padding:12px;
+padding:14px;
 display:flex;
 flex-direction:column;
+gap:10px;
 }
 
 .msg{
-max-width:80%;
-padding:10px;
-border-radius:12px;
-margin-bottom:8px;
+max-width:78%;
+padding:10px 12px;
+border-radius:14px;
 font-size:14px;
 position:relative;
+backdrop-filter:blur(10px);
+box-shadow:0 8px 20px rgba(0,0,0,.3);
 }
 
 .me{
@@ -76,87 +94,91 @@ background:var(--other);
 
 .meta{
 font-size:10px;
-color:var(--muted);
+opacity:.8;
 text-align:right;
 margin-top:4px;
 }
 
 .delete{
-font-size:10px;
-cursor:pointer;
-color:#f87171;
 position:absolute;
 top:4px;
 right:6px;
+font-size:10px;
+cursor:pointer;
+opacity:.7;
 }
 
-.typing{
+img{
+max-width:100%;
+border-radius:10px;
+margin-top:6px;
+}
+
+/* TYPING */
+#typing{
 font-size:12px;
-padding:5px 12px;
-color:var(--muted);
+padding:6px 14px;
+opacity:.7;
 }
 
+/* INPUT */
 .input{
 display:flex;
-gap:5px;
-padding:10px;
-background:#020617;
+gap:6px;
+padding:12px;
+background:rgba(255,255,255,.06);
+border-top:1px solid var(--border);
 }
 
 input{
 flex:1;
 padding:10px;
 border:none;
-border-radius:8px;
+border-radius:10px;
 outline:none;
+background:rgba(255,255,255,.18);
+color:white;
 }
 
 button{
-padding:10px;
+padding:10px 14px;
 border:none;
-border-radius:8px;
-background:#2563eb;
-color:white;
+border-radius:10px;
 cursor:pointer;
+background:linear-gradient(135deg,#38bdf8,#2563eb);
+color:white;
+box-shadow:0 4px 15px rgba(0,0,0,.4);
 }
 
-img{
-max-width:100%;
-border-radius:8px;
-margin-top:5px;
-}
 </style>
 </head>
 <body>
 
 <div class="app">
-<div class="header">
-<span>Live Chat</span>
-<div>
-<span id="onlineCount">0 online</span>
-<button onclick="toggleTheme()">🌙</button>
-</div>
-</div>
+  <div class="header">
+    <span>Live Chat</span>
+    <span id="online">0 online</span>
+  </div>
 
-<div id="chat"></div>
-<div id="typing" class="typing"></div>
+  <div id="chat"></div>
+  <div id="typing"></div>
 
-<div class="input">
-<input id="msg" placeholder="Message">
-<input type="file" id="imgUpload" hidden>
-<button onclick="document.getElementById('imgUpload').click()">📎</button>
-<button onclick="send()">Send</button>
-</div>
+  <div class="input">
+    <input id="msg" placeholder="Type message…" />
+    <input type="file" id="img" hidden>
+    <button onclick="img.click()">📎</button>
+    <button onclick="send()">Send</button>
+  </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import {
 getDatabase, ref, push, onChildAdded,
-set, remove, onValue, update, onDisconnect
+onValue, set, remove, update, onDisconnect
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
 
-/* YOUR CONFIG */
+/* 🔥 YOUR FIREBASE CONFIG */
 const firebaseConfig = {
 apiKey: "AIzaSyAXgubYgcfYsaeDcx8DuEFmYWJkJ6oz8so",
 authDomain: "direct-chat-via-link.firebaseapp.com",
@@ -164,124 +186,104 @@ databaseURL: "https://direct-chat-via-link-default-rtdb.asia-southeast1.firebase
 projectId: "direct-chat-via-link",
 storageBucket: "direct-chat-via-link.firebasestorage.app",
 messagingSenderId: "26226616717",
-appId: "1:26226616717:web:89d75ac8e16d05245375c4",
-measurementId: "G-HZ6RQ23289"
+appId: "1:26226616717:web:89d75ac8e16d05245375c4"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-let username = localStorage.getItem("name") || prompt("Your name?");
-localStorage.setItem("name", username);
+/* NOTIFICATIONS */
+if ("Notification" in window && Notification.permission !== "granted") {
+Notification.requestPermission();
+}
 
-let uid = localStorage.getItem("uid") || crypto.randomUUID();
-localStorage.setItem("uid", uid);
+let tabActive=true;
+document.addEventListener("visibilitychange",()=>tabActive=!document.hidden);
 
-const room = new URLSearchParams(location.search).get("room") || "default";
+/* USER */
+let uid=localStorage.uid||crypto.randomUUID();
+let name=localStorage.name||prompt("Your name?");
+localStorage.uid=uid;
+localStorage.name=name;
 
-const chatRef = ref(db, `rooms/${room}/messages`);
-const presenceRef = ref(db, `rooms/${room}/presence/${uid}`);
-const typingRef = ref(db, `rooms/${room}/typing/${uid}`);
-const presenceRoot = ref(db, `rooms/${room}/presence`);
+/* ROOM */
+const room=new URLSearchParams(location.search).get("room")||"default";
+const chatRef=ref(db,`rooms/${room}/messages`);
+const presenceRef=ref(db,`rooms/${room}/presence/${uid}`);
+const typingRef=ref(db,`rooms/${room}/typing/${uid}`);
 
-set(presenceRef, true);
+/* PRESENCE */
+set(presenceRef,true);
 onDisconnect(presenceRef).remove();
 
-/* ONLINE COUNT */
-onValue(presenceRoot, snap=>{
-const count = snap.exists() ? Object.keys(snap.val()).length : 0;
-document.getElementById("onlineCount").innerText = count+" online";
+onValue(ref(db,`rooms/${room}/presence`),s=>{
+online.innerText=(s.exists()?Object.keys(s.val()).length:0)+" online";
 });
 
-/* SEND TEXT */
-window.send = function(){
-const text = msg.value.trim();
-if(!text) return;
+/* SEND */
+window.send=()=>{
+if(!msg.value.trim())return;
 push(chatRef,{
-text,
-user:username,
+text:msg.value,
+user:name,
 uid,
 time:Date.now(),
 seen:false
 });
 msg.value="";
-}
-
-/* IMAGE UPLOAD */
-imgUpload.onchange = e=>{
-const file = e.target.files[0];
-const reader = new FileReader();
-reader.onload = ()=>{
-push(chatRef,{
-image:reader.result,
-user:username,
-uid,
-time:Date.now(),
-seen:false
-});
-};
-reader.readAsDataURL(file);
 };
 
-/* TYPING */
-msg.addEventListener("input",()=>{
-set(typingRef,username);
+msg.oninput=()=>{
+set(typingRef,name);
 setTimeout(()=>set(typingRef,null),1000);
+};
+
+onValue(ref(db,`rooms/${room}/typing`),s=>{
+let t=[];
+s.forEach(c=>c.val()&&c.key!==uid&&t.push(c.val()));
+typing.innerText=t.length?t.join(", ")+" typing…":"";
 });
 
-onValue(ref(db,`rooms/${room}/typing`), snap=>{
-let typingUsers=[];
-snap.forEach(child=>{
-if(child.val() && child.key!==uid) typingUsers.push(child.val());
+/* IMAGE */
+img.onchange=e=>{
+const r=new FileReader();
+r.onload=()=>push(chatRef,{
+image:r.result,user:name,uid,time:Date.now(),seen:false
 });
-document.getElementById("typing").innerText=
-typingUsers.length ? typingUsers.join(", ")+" typing..." : "";
-});
+r.readAsDataURL(e.target.files[0]);
+};
 
 /* RECEIVE */
-onChildAdded(chatRef, snap=>{
-const m = snap.val();
-const key = snap.key;
+onChildAdded(chatRef,s=>{
+const m=s.val(),k=s.key;
 
 if(m.uid!==uid){
-update(ref(db,`rooms/${room}/messages/${key}`),{seen:true});
+update(ref(db,`rooms/${room}/messages/${k}`),{seen:true});
+if(!tabActive&&Notification.permission==="granted"){
+new Notification("New message from "+m.user,{
+body:m.text||"📷 Image",
+icon:"https://cdn-icons-png.flaticon.com/512/9068/9068671.png"
+});
+}
 }
 
-const div = document.createElement("div");
-div.className="msg "+(m.uid===uid?"me":"other");
-
-let content = `<b>${m.user}</b><br>`;
-if(m.text) content+=m.text;
-if(m.image) content+=`<img src="${m.image}">`;
-
-content+=`<div class="meta">
+const d=document.createElement("div");
+d.className="msg "+(m.uid===uid?"me":"other");
+d.innerHTML=`
+<b>${m.user}</b><br>
+${m.text||""}
+${m.image?`<img src="${m.image}">`:""}
+<div class="meta">
 ${new Date(m.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
-${m.uid===uid ? (m.seen?" ✔✔":" ✔") : ""}
-</div>`;
-
-if(m.uid===uid){
-content+=`<div class="delete" onclick="deleteMsg('${key}')">✖</div>`;
-}
-
-div.innerHTML=content;
-chat.appendChild(div);
+${m.uid===uid?(m.seen?" ✔✔":" ✔"):""}
+</div>
+${m.uid===uid?`<div class="delete" onclick="del('${k}')">✖</div>`:""}
+`;
+chat.appendChild(d);
 chat.scrollTop=chat.scrollHeight;
 });
 
-/* DELETE */
-window.deleteMsg=function(key){
-remove(ref(db,`rooms/${room}/messages/${key}`));
-}
-
-/* THEME */
-window.toggleTheme=function(){
-if(document.body.style.background==="white"){
-location.reload();
-}else{
-document.body.style.background="white";
-document.querySelector(".app").style.background="#f3f4f6";
-}
-}
+window.del=k=>remove(ref(db,`rooms/${room}/messages/${k}`));
 </script>
 </body>
 </html>
